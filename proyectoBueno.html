@@ -29,11 +29,26 @@
         .notification-time { font-size: 0.75rem; color: #888; display: block; margin-top: 4px; }
         .role-selector { padding: 5px; border-radius: 4px; border: 1px solid #ddd; width: 100%; }
         
-        /* Botón eliminar columna */
+        /* Botones de eliminar */
         .delete-col-btn {
             background: none; border: none; color: #e74c3c; cursor: pointer; margin-left: 10px;
         }
         .delete-col-btn:hover { color: #c0392b; }
+
+        .delete-member-btn {
+            background-color: #ffebee;
+            color: #c62828;
+            border: 1px solid #ffcdd2;
+            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-left: 10px;
+        }
+        .delete-member-btn:hover {
+            background-color: #c62828;
+            color: white;
+        }
     </style>
 </head>
 
@@ -161,7 +176,7 @@
     </div>
 
     <div id="memberListModal" class="modal-overlay">
-        <div class="modal-content small-modal">
+        <div class="modal-content small-modal" style="max-width: 500px;">
             <div class="modal-header">
                 <h2><i class="fas fa-users"></i> Equipo</h2>
                 <button class="modal-close-btn" onclick="closeMemberListModal()">&times;</button>
@@ -199,22 +214,19 @@
 
 
     <script>
-        // CONFIGURACIÓN API
         const API_BASE = 'http://localhost:8080/api';
         
         // Variables Globales
-        let currentProjectId = 1; // Por defecto ID 1 (Plataforma Web 3.0)
+        let currentProjectId = 1;
         let currentUser = null;
         
-        // Datos en memoria
         let tasks = [];
         let members = [];
         let roles = [];
-        let statuses = []; // Columnas
+        let statuses = [];
 
-        // --- 1. INICIALIZACIÓN ---
+        // --- INICIALIZACIÓN ---
         document.addEventListener('DOMContentLoaded', async () => {
-            // Verificar Login
             const userStr = localStorage.getItem('usuarioLogueado');
             if (!userStr) {
                 alert("Debes iniciar sesión primero.");
@@ -224,105 +236,80 @@
             currentUser = JSON.parse(userStr);
             document.getElementById('headerUserName').textContent = currentUser.nombre;
 
-            // Obtener ID proyecto de URL (si venimos de index.html)
             const urlParams = new URLSearchParams(window.location.search);
             const idParam = urlParams.get('id');
             if (idParam) currentProjectId = idParam;
 
-            console.log("Cargando proyecto ID:", currentProjectId);
-
-            // Cargar todo
             await cargarDatosMaestros();
             await cargarTablero();
-            renderNotificaciones(); // Cargar historial local
+            renderNotificaciones();
         });
 
-        // --- 2. CARGA DE DATOS ---
+        // --- CARGA DE DATOS ---
         async function cargarDatosMaestros() {
             try {
-                // Fetch paralelo para velocidad
                 const [resEst, resMiem, resRol] = await Promise.all([
                     fetch(`${API_BASE}/estados`),
                     fetch(`${API_BASE}/miembros`),
                     fetch(`${API_BASE}/roles`)
                 ]);
-
                 statuses = await resEst.json();
                 members = await resMiem.json();
                 roles = await resRol.json();
-
             } catch (error) {
                 console.error("Error cargando maestros:", error);
-                alert("Error conectando con la API. ¿Está corriendo en puerto 8080?");
             }
         }
 
         async function cargarTablero() {
             try {
-                // Obtener tareas y filtrar por proyecto
                 const res = await fetch(`${API_BASE}/tareas`);
                 const todas = await res.json();
                 tasks = todas.filter(t => t.proyectoId == currentProjectId);
-
                 renderizarKanban();
-            } catch (error) {
-                console.error("Error cargando tareas:", error);
-            }
+            } catch (error) { console.error(error); }
         }
 
-        // --- 3. RENDERIZADO (DIBUJAR EN PANTALLA) ---
+        // --- RENDERIZADO KANBAN ---
         function renderizarKanban() {
             const board = document.getElementById('kanbanBoard');
-            board.innerHTML = ''; // Limpiar lo que había antes
+            board.innerHTML = '';
 
-            // Dibujar cada columna (Estado)
             statuses.forEach(estado => {
                 const tareasDeColumna = tasks.filter(t => t.estadoId === estado.estadoId);
-
                 const colDiv = document.createElement('div');
                 colDiv.className = 'kanban-column';
                 colDiv.dataset.statusId = estado.estadoId;
 
-                // Eventos Drag & Drop en la columna
                 colDiv.addEventListener('dragover', e => { e.preventDefault(); colDiv.classList.add('drag-over'); });
                 colDiv.addEventListener('dragleave', () => colDiv.classList.remove('drag-over'));
                 colDiv.addEventListener('drop', e => soltarTarea(e, estado.estadoId));
 
-                // HTML de la columna
                 colDiv.innerHTML = `
                     <div class="column-header">
                         <h3>${estado.nombre} <span style="font-size:0.8em; color:#666">(${tareasDeColumna.length})</span></h3>
                         <div class="column-menu">
-                            <button class="delete-col-btn" title="Eliminar columna (solo si vacía)" onclick="eliminarColumna(${estado.estadoId})">
+                            <button class="delete-col-btn" title="Eliminar columna" onclick="eliminarColumna(${estado.estadoId})">
                                 <i class="fas fa-trash-alt"></i>
                             </button>
                         </div>
                     </div>
-                    <div class="column-content" id="col-content-${estado.estadoId}">
-                        </div>
+                    <div class="column-content"></div>
                     <button class="btn add-item-btn" onclick="openAddItemModal(${estado.estadoId})">
                         <i class="fas fa-plus"></i> Añadir tarea
                     </button>
                 `;
 
-                // Insertar tareas
                 const contentDiv = colDiv.querySelector('.column-content');
                 tareasDeColumna.forEach(tarea => {
-                    const card = crearTarjetaHTML(tarea);
-                    contentDiv.appendChild(card);
+                    contentDiv.appendChild(crearTarjetaHTML(tarea));
                 });
-
                 board.appendChild(colDiv);
             });
 
-            // Botón final para crear columna
             const addColDiv = document.createElement('div');
             addColDiv.className = 'add-column-placeholder';
-            addColDiv.innerHTML = `
-                <button class="btn add-column-btn mas-columnas" onclick="openAddColumnModal()">
-                    <i class="fas fa-plus fa-lg"></i>
-                </button>
-            `;
+            addColDiv.innerHTML = `<button class="btn add-column-btn mas-columnas" onclick="openAddColumnModal()"><i class="fas fa-plus fa-lg"></i></button>`;
             board.appendChild(addColDiv);
         }
 
@@ -332,73 +319,51 @@
             card.draggable = true;
             card.dataset.taskId = tarea.tareaId;
 
-            // Encontrar usuario asignado
             const asignado = members.find(m => m.miembroId === tarea.asignadoA);
             const iniciales = asignado ? asignado.nombre.substring(0, 2).toUpperCase() : '?';
 
-            // Eventos Drag Tarea
             card.addEventListener('dragstart', (e) => {
                 card.classList.add('dragging');
                 e.dataTransfer.setData('text/plain', tarea.tareaId);
             });
             card.addEventListener('dragend', () => card.classList.remove('dragging'));
-            
-            // Evento Click (Editar)
             card.onclick = () => openEditTaskModal(tarea);
 
             card.innerHTML = `
-                <div class="card-image-kanban" style="background-color: ${getColorRandom(tarea.tareaId)}">
-                    <i class="fas fa-tasks"></i>
-                </div>
+                <div class="card-image-kanban" style="background-color: ${getColorRandom(tarea.tareaId)}"><i class="fas fa-tasks"></i></div>
                 <div class="card-title-kanban">${tarea.titulo}</div>
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
                     <span style="font-size:0.7rem; color:#888;">${tarea.fechaVencimiento || 'Sin fecha'}</span>
-                    <div class="member-avatar" style="width:25px; height:25px; font-size:0.7rem; background:#8D47F0;">
-                        ${iniciales}
-                    </div>
+                    <div class="member-avatar" style="width:25px; height:25px; font-size:0.7rem; background:#8D47F0;">${iniciales}</div>
                 </div>
             `;
             return card;
         }
 
-        // --- 4. LÓGICA DE NEGOCIO (ACCIONES) ---
-
-        // ARRASTRAR Y SOLTAR
+        // --- ACCIONES TAREAS ---
         async function soltarTarea(e, nuevoEstadoId) {
             e.preventDefault();
             const tareaId = e.dataTransfer.getData('text/plain');
             const tarea = tasks.find(t => t.tareaId == tareaId);
             
             if (tarea && tarea.estadoId !== nuevoEstadoId) {
-                // Optimista: Actualizar UI antes de API
-                const estadoViejo = statuses.find(s => s.estadoId === tarea.estadoId).nombre;
-                const estadoNuevo = statuses.find(s => s.estadoId === nuevoEstadoId).nombre;
-                
                 tarea.estadoId = nuevoEstadoId;
-                renderizarKanban(); // Repintar rápido
-
-                // API
+                renderizarKanban();
                 try {
                     await fetch(`${API_BASE}/tareas/${tareaId}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(tarea)
                     });
-                    registrarNotificacion(`Movió tarea <b>"${tarea.titulo}"</b> a ${estadoNuevo}`);
-                } catch (err) {
-                    console.error(err);
-                    alert("Error al guardar movimiento en servidor.");
-                }
+                    registrarNotificacion(`Tarea <b>"${tarea.titulo}"</b> movida`);
+                } catch (err) { console.error(err); }
             }
         }
 
-        // GUARDAR TAREA (CREAR / EDITAR)
         async function guardarTarea(e) {
             e.preventDefault();
-            
             const id = document.getElementById('taskId').value;
             const isEdit = !!id;
-
             const datos = {
                 titulo: document.getElementById('taskTitle').value,
                 descripcion: document.getElementById('taskDescription').value,
@@ -407,7 +372,6 @@
                 proyectoId: document.getElementById('taskProjectId').value,
                 estadoId: document.getElementById('taskStatusId').value
             };
-
             const url = isEdit ? `${API_BASE}/tareas/${id}` : `${API_BASE}/tareas`;
             const method = isEdit ? 'PUT' : 'POST';
 
@@ -417,20 +381,17 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(datos)
                 });
-
                 if (res.ok) {
                     closeAddItemModal();
                     await cargarTablero();
-                    registrarNotificacion(`${isEdit ? 'Editó' : 'Creó'} la tarea <b>"${datos.titulo}"</b>`);
+                    registrarNotificacion(`${isEdit ? 'Editó' : 'Creó'} tarea <b>"${datos.titulo}"</b>`);
                 }
             } catch (err) { console.error(err); }
         }
 
-        // ELIMINAR TAREA
         async function eliminarTarea() {
             const id = document.getElementById('taskId').value;
-            if (!confirm("¿Eliminar esta tarea permanentemente?")) return;
-
+            if (!confirm("¿Eliminar tarea?")) return;
             try {
                 await fetch(`${API_BASE}/tareas/${id}`, { method: 'DELETE' });
                 closeAddItemModal();
@@ -439,7 +400,7 @@
             } catch (err) { console.error(err); }
         }
 
-        // CREAR COLUMNA
+        // --- ACCIONES COLUMNAS ---
         async function crearColumna(e) {
             e.preventDefault();
             const nombre = document.getElementById('columnName').value;
@@ -451,39 +412,35 @@
                 });
                 if (res.ok) {
                     closeAddColumnModal();
-                    await cargarDatosMaestros(); // Recargar estados
+                    await cargarDatosMaestros();
                     await cargarTablero();
-                    registrarNotificacion(`Nueva columna: <b>${nombre}</b>`);
+                    registrarNotificacion(`Columna <b>${nombre}</b> creada`);
                 }
             } catch (err) { console.error(err); }
         }
-        
-        // ELIMINAR COLUMNA
+
         async function eliminarColumna(id) {
-            if(!confirm("¿Eliminar columna? Solo se puede si está vacía.")) return;
+            if(!confirm("¿Eliminar columna? Solo se permite si está vacía.")) return;
             try {
                 const res = await fetch(`${API_BASE}/estados/${id}`, { method: 'DELETE' });
                 if(res.ok) {
                     await cargarDatosMaestros();
                     await cargarTablero();
                     registrarNotificacion("Columna eliminada");
-                } else {
-                    alert("No se pudo eliminar. Asegúrate de que no tenga tareas.");
-                }
+                } else { alert("Error: La columna debe estar vacía."); }
             } catch(e) { console.error(e); }
         }
 
-        // CREAR MIEMBRO (INVITAR)
+        // --- ACCIONES MIEMBROS ---
         async function crearMiembro(e) {
             e.preventDefault();
             const data = {
                 nombre: document.getElementById('newMemberName').value,
                 email: document.getElementById('newMemberEmail').value,
                 contrasenaHash: document.getElementById('newMemberPass').value,
-                rolId: 3, // Rol Dev por defecto
+                rolId: 3,
                 fechaRegistro: new Date().toISOString()
             };
-
             try {
                 const res = await fetch(`${API_BASE}/miembros`, {
                     method: 'POST',
@@ -492,22 +449,16 @@
                 });
                 if (res.ok) {
                     closeInviteMemberModal();
-                    await cargarDatosMaestros(); // Refrescar lista
-                    registrarNotificacion(`Usuario <b>${data.nombre}</b> se unió al equipo`);
-                } else {
-                    alert("Error: El email ya existe o datos inválidos.");
-                }
+                    await cargarDatosMaestros();
+                    registrarNotificacion(`Usuario <b>${data.nombre}</b> añadido`);
+                } else { alert("Error: Email duplicado."); }
             } catch (err) { console.error(err); }
         }
 
-        // CAMBIAR ROL
         async function cambiarRol(miembroId, nuevoRolId, nombre) {
-            // Obtener el objeto miembro completo (API requiere todo el objeto en PUT)
             const miembro = members.find(m => m.miembroId === miembroId);
             if (!miembro) return;
-
             miembro.rolId = parseInt(nuevoRolId);
-
             try {
                 await fetch(`${API_BASE}/miembros/${miembroId}`, {
                     method: 'PUT',
@@ -518,99 +469,29 @@
             } catch (err) { console.error(err); }
         }
 
-        // --- 5. NOTIFICACIONES (LOCAL) ---
-        function registrarNotificacion(mensaje) {
-            const lista = JSON.parse(localStorage.getItem('notificaciones') || '[]');
-            const nueva = {
-                user: currentUser.nombre,
-                msg: mensaje,
-                time: new Date().toLocaleTimeString()
-            };
-            lista.unshift(nueva);
-            localStorage.setItem('notificaciones', JSON.stringify(lista.slice(0, 15)));
-            
-            renderNotificaciones();
-            // Mostrar badge
-            const badge = document.getElementById('notifBadge');
-            badge.textContent = parseInt(badge.textContent || 0) + 1;
-            badge.style.display = 'block';
-        }
+        // FUNCIÓN ELIMINAR MIEMBRO (NUEVA)
+        async function eliminarMiembro(id, nombre) {
+            if(!confirm(`¿Estás seguro de que quieres eliminar a ${nombre} del equipo?`)) return;
 
-        function renderNotificaciones() {
-            const lista = JSON.parse(localStorage.getItem('notificaciones') || '[]');
-            const container = document.getElementById('notificationList');
-            container.innerHTML = '';
-            
-            if(lista.length === 0) {
-                container.innerHTML = '<p style="padding:10px; color:#666;">Sin actividad.</p>';
-                return;
-            }
+            try {
+                const res = await fetch(`${API_BASE}/miembros/${id}`, {
+                    method: 'DELETE'
+                });
 
-            lista.forEach(n => {
-                const div = document.createElement('div');
-                div.className = 'notification-item';
-                div.innerHTML = `
-                    <span style="font-weight:bold; color:#8D47F0;">${n.user}</span>: ${n.msg}
-                    <span class="notification-time">${n.time}</span>
-                `;
-                container.appendChild(div);
-            });
-        }
-
-        function toggleNotificationPopover() {
-            const pop = document.getElementById('notificationPopover');
-            if (pop.style.display === 'none') {
-                pop.style.display = 'block';
-                document.getElementById('notifBadge').style.display = 'none';
-                document.getElementById('notifBadge').textContent = '0';
-            } else {
-                pop.style.display = 'none';
+                if(res.ok) {
+                    await cargarDatosMaestros(); // Recargar la lista local
+                    openMemberListModal(); // Refrescar el modal abierto
+                    registrarNotificacion(`Eliminó al miembro <b>${nombre}</b>`);
+                } else {
+                    alert("No se pudo eliminar al miembro. Puede que tenga tareas asignadas.");
+                }
+            } catch(error) {
+                console.error(error);
+                alert("Error de conexión al intentar eliminar.");
             }
         }
 
-        // --- 6. UTILIDADES UI ---
-        const addItemModal = document.getElementById('addItemModal');
-        
-        function openAddItemModal(statusId) {
-            // Limpiar form para crear
-            document.querySelector('.add-item-form-grid').reset();
-            document.getElementById('taskId').value = '';
-            document.getElementById('taskProjectId').value = currentProjectId;
-            document.getElementById('taskStatusId').value = statusId;
-            document.getElementById('btnDeleteTask').style.display = 'none';
-            document.getElementById('modalTaskTitle').innerHTML = '<i class="fas fa-plus"></i> Nueva Tarea';
-            
-            llenarSelectMiembros();
-            addItemModal.style.display = 'flex';
-        }
-
-        function openEditTaskModal(tarea) {
-            // Llenar form para editar
-            document.getElementById('taskId').value = tarea.tareaId;
-            document.getElementById('taskProjectId').value = tarea.proyectoId;
-            document.getElementById('taskStatusId').value = tarea.estadoId;
-            
-            document.getElementById('taskTitle').value = tarea.titulo;
-            document.getElementById('taskDescription').value = tarea.descripcion || '';
-            document.getElementById('taskDueDate').value = tarea.fechaVencimiento || '';
-            
-            document.getElementById('btnDeleteTask').style.display = 'block';
-            document.getElementById('modalTaskTitle').innerHTML = '<i class="fas fa-edit"></i> Editar Tarea';
-            
-            llenarSelectMiembros(tarea.asignadoA);
-            addItemModal.style.display = 'flex';
-        }
-
-        function llenarSelectMiembros(selectedId) {
-            const sel = document.getElementById('taskAssignee');
-            sel.innerHTML = '<option value="">-- Sin Asignar --</option>';
-            members.forEach(m => {
-                const isSel = m.miembroId === selectedId ? 'selected' : '';
-                sel.innerHTML += `<option value="${m.miembroId}" ${isSel}>${m.nombre}</option>`;
-            });
-        }
-
-        // Modales de Miembros
+        // --- MODALES MIEMBROS Y UI ---
         const memberListModal = document.getElementById('memberListModal');
         function openMemberListModal() {
             const body = document.getElementById('memberListBody');
@@ -621,48 +502,96 @@
                     options += `<option value="${r.rolId}" ${m.rolId===r.rolId?'selected':''}>${r.nombre}</option>`;
                 });
                 
+                // Verificamos si es el usuario actual para no mostrar el botón de borrarse a sí mismo
+                const esYo = (m.miembroId === currentUser.miembroId);
+                const botonEliminar = esYo ? '' : 
+                    `<button class="delete-member-btn" title="Eliminar miembro" onclick="eliminarMiembro(${m.miembroId}, '${m.nombre}')">
+                        <i class="fas fa-trash-alt"></i>
+                     </button>`;
+
                 body.innerHTML += `
                     <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee;">
-                        <div>
-                            <div style="font-weight:bold;">${m.nombre}</div>
+                        <div style="flex-grow:1;">
+                            <div style="font-weight:bold;">${m.nombre} ${esYo ? '(Tú)' : ''}</div>
                             <div style="font-size:0.8rem; color:#888;">${m.email}</div>
                         </div>
-                        <select class="role-selector" style="width:120px;" onchange="cambiarRol(${m.miembroId}, this.value, '${m.nombre}')">
-                            ${options}
-                        </select>
+                        <div style="display:flex; align-items:center;">
+                            <select class="role-selector" style="width:120px;" onchange="cambiarRol(${m.miembroId}, this.value, '${m.nombre}')">
+                                ${options}
+                            </select>
+                            ${botonEliminar}
+                        </div>
                     </div>
                 `;
             });
             memberListModal.style.display = 'flex';
         }
 
-        // Cierres
+        // --- NOTIFICACIONES ---
+        function registrarNotificacion(mensaje) {
+            const lista = JSON.parse(localStorage.getItem('notificaciones') || '[]');
+            lista.unshift({ user: currentUser.nombre, msg: mensaje, time: new Date().toLocaleTimeString() });
+            localStorage.setItem('notificaciones', JSON.stringify(lista.slice(0, 15)));
+            renderNotificaciones();
+            const badge = document.getElementById('notifBadge');
+            badge.textContent = parseInt(badge.textContent || 0) + 1;
+            badge.style.display = 'block';
+        }
+        function renderNotificaciones() {
+            const lista = JSON.parse(localStorage.getItem('notificaciones') || '[]');
+            const container = document.getElementById('notificationList');
+            container.innerHTML = lista.length ? '' : '<p style="padding:10px; color:#666;">Sin actividad.</p>';
+            lista.forEach(n => {
+                container.innerHTML += `<div class="notification-item"><span style="font-weight:bold; color:#8D47F0;">${n.user}</span>: ${n.msg}<span class="notification-time">${n.time}</span></div>`;
+            });
+        }
+        function toggleNotificationPopover() {
+            const pop = document.getElementById('notificationPopover');
+            if(pop.style.display === 'none') { pop.style.display = 'block'; document.getElementById('notifBadge').style.display = 'none'; document.getElementById('notifBadge').textContent='0'; }
+            else pop.style.display = 'none';
+        }
+
+        // --- UTILIDADES ---
+        const addItemModal = document.getElementById('addItemModal');
+        function openAddItemModal(statusId) {
+            document.querySelector('.add-item-form-grid').reset();
+            document.getElementById('taskId').value = '';
+            document.getElementById('taskProjectId').value = currentProjectId;
+            document.getElementById('taskStatusId').value = statusId;
+            document.getElementById('btnDeleteTask').style.display = 'none';
+            document.getElementById('modalTaskTitle').innerHTML = '<i class="fas fa-plus"></i> Nueva Tarea';
+            llenarSelectMiembros();
+            addItemModal.style.display = 'flex';
+        }
+        function openEditTaskModal(tarea) {
+            document.getElementById('taskId').value = tarea.tareaId;
+            document.getElementById('taskProjectId').value = tarea.proyectoId;
+            document.getElementById('taskStatusId').value = tarea.estadoId;
+            document.getElementById('taskTitle').value = tarea.titulo;
+            document.getElementById('taskDescription').value = tarea.descripcion || '';
+            document.getElementById('taskDueDate').value = tarea.fechaVencimiento || '';
+            document.getElementById('btnDeleteTask').style.display = 'block';
+            document.getElementById('modalTaskTitle').innerHTML = '<i class="fas fa-edit"></i> Editar Tarea';
+            llenarSelectMiembros(tarea.asignadoA);
+            addItemModal.style.display = 'flex';
+        }
+        function llenarSelectMiembros(selId) {
+            const sel = document.getElementById('taskAssignee');
+            sel.innerHTML = '<option value="">-- Sin Asignar --</option>';
+            members.forEach(m => sel.innerHTML += `<option value="${m.miembroId}" ${m.miembroId===selId?'selected':''}>${m.nombre}</option>`);
+        }
         function closeAddItemModal() { addItemModal.style.display = 'none'; }
         function closeInviteMemberModal() { document.getElementById('inviteMemberModal').style.display = 'none'; }
         function openInviteMemberModal() { document.getElementById('inviteMemberModal').style.display = 'flex'; }
         function closeMemberListModal() { memberListModal.style.display = 'none'; }
         function openAddColumnModal() { document.getElementById('addColumnModal').style.display = 'flex'; }
         function closeAddColumnModal() { document.getElementById('addColumnModal').style.display = 'none'; }
-
-        // Click fuera para cerrar
-        window.onclick = function(e) {
-            if (e.target.classList.contains('modal-overlay')) e.target.style.display = 'none';
-        }
-
-        // Filtro visual
+        window.onclick = e => { if(e.target.classList.contains('modal-overlay')) e.target.style.display = 'none'; }
         function filtrarTareasUI() {
             const txt = document.getElementById('searchInput').value.toLowerCase();
-            document.querySelectorAll('.kanban-card').forEach(c => {
-                const title = c.querySelector('.card-title-kanban').textContent.toLowerCase();
-                c.style.display = title.includes(txt) ? 'block' : 'none';
-            });
+            document.querySelectorAll('.kanban-card').forEach(c => c.style.display = c.textContent.toLowerCase().includes(txt)?'block':'none');
         }
-
-        function getColorRandom(id) {
-            const c = ['#E74C3C', '#3498DB', '#2ECC71', '#F1C40F', '#9B59B6', '#1ABC9C'];
-            return c[id % c.length];
-        }
-
+        function getColorRandom(id) { return ['#E74C3C','#3498DB','#2ECC71','#F1C40F','#9B59B6'][id%5]; }
     </script>
 </body>
 </html>
