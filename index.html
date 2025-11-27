@@ -4,9 +4,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>mi proyecto</title>
+    <title>Mis Proyectos - TaskFlow</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    
+    <style>
+        /* Estilos para el usuario logueado */
+        .user-logged-area {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            color: white;
+        }
+        .logout-btn {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .logout-btn:hover {
+            background-color: rgba(255, 255, 255, 0.4);
+        }
+        #userNameDisplay {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        /* Estilo para el botón de eliminar dentro del modal de edición */
+        .btn-delete {
+            background-color: #e74c3c;
+            color: white;
+            margin-top: 15px;
+            border: none;
+        }
+        .btn-delete:hover {
+            background-color: #c0392b;
+        }
+    </style>
 </head>
 
 <body>
@@ -21,9 +61,17 @@
                 <i class="fas fa-search"></i>
                 <input type="text" placeholder="Buscar proyectos...">
             </div>
-            <a href="iniciarSesion.html" class="login-btn">
+            
+            <a href="iniciarSesion.html" class="login-btn" id="btnLogin">
                 Iniciar Sesión
             </a>
+
+            <div id="userInfo" class="user-logged-area" style="display: none;">
+                <span id="userNameDisplay">Usuario</span>
+                <button onclick="cerrarSesion()" class="logout-btn" title="Cerrar Sesión">
+                    <i class="fas fa-sign-out-alt"></i> Salir
+                </button>
+            </div>
         </header>
 
         <main class="main-content">
@@ -31,50 +79,29 @@
                 <div class="dashboard-header">
                     <h2>Mis proyectos</h2>
                     <div class="actions">
-                        <button class="btn primary-btn" id="openNewProjectModal" onclick="openNewProjectModal()"><i
-                                class="fas fa-plus"></i>
-                            Nuevo Proyecto
+                        <button class="btn primary-btn" id="openNewProjectModal" onclick="openNewProjectModal()">
+                            <i class="fas fa-plus"></i> Nuevo Proyecto
                         </button>
                         <i class="fas fa-th-large view-icon active"></i>
                         <i class="fas fa-list view-icon"></i>
                         <i class="fas fa-ellipsis-v menu-icon"></i>
                     </div>
                 </div>
-                <div class="proyectos-grid">
-                    <a href="proyectoBueno.html">
-                        <article class="proyecto-card">
-                            <div class="card-image"><img src="merry.webp" alt="Imagen del proyecto"></div>
-                            <div class="card-info">
-                                <h3>proyectoWireframe</h3>
-                                <p>Descripción...</p>
-                            </div>
-                            <div class="card-actions">
-                                <i class="fas fa-ellipsis-h"></i>
-                            </div>
-                        </article>
-                    </a>
-                    <article class="proyecto-card">
-                        <div class="card-image">[IMG Placeholder]</div>
-                        <div class="card-info">
-                            <h3>Nombre Proyecto B</h3>
-                            <p>Descripción corta...</p>
-                        </div>
-                        <div class="card-actions">
-                            <i class="fas fa-ellipsis-h"></i>
-                        </div>
-                    </article>
-                </div>
+                
+                <div class="proyectos-grid" id="proyectosContainer">
+                    </div>
             </section>
         </main>
 
     </div>
+
     <div id="newProjectModal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
                 <h2><i class="fas fa-folder-plus"></i> Nuevo Proyecto</h2>
                 <button class="modal-close-btn" onclick="closeNewProjectModal()">&times;</button>
             </div>
-            <form class="modal-form" onsubmit="return validateAndCreate(event)">
+            <form class="modal-form" onsubmit="crearProyecto(event)">
                 <div class="form-top-grid">
                     <div class="input-group name-input-group">
                         <label for="projectName">Nombre del proyecto</label>
@@ -82,22 +109,14 @@
                             <input type="text" id="projectName" placeholder="Introduzca el nombre..." required>
                         </div>
                     </div>
-                    <div class="input-group image-input-group">
-                        <div class="image-preview" id="imagePreview" style="cursor: pointer;">
-                            <i class="fas fa-image fa-2x image-icon"></i>
-                            <img id="previewImage" src="" alt="Vista previa de la imagen" style="display: none;">
-                        </div>
-                        <input type="file" id="projectImageInput" accept="image/*" style="display: none;">
                     </div>
-                </div>
                 <div class="input-group description-input-group">
-                    <label for="projectDescription">Descripción (Opcional)</label>
+                    <label for="projectDescription">Descripción</label>
                     <textarea id="projectDescription" rows="5"
                         placeholder="Descripción breve del proyecto..."></textarea>
                 </div>
-                <div>
-                    <button type="button" class="btn primary-btn" style="margin-left: 35%;"
-                        onclick="closeNewProjectModal()">
+                <div style="text-align: center; margin-top: 20px;">
+                    <button type="submit" class="btn primary-btn">
                         Crear proyecto
                     </button>
                 </div>
@@ -105,47 +124,259 @@
         </div>
     </div>
 
+    <div id="editProjectModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-edit"></i> Gestionar Proyecto</h2>
+                <button class="modal-close-btn" onclick="closeEditProjectModal()">&times;</button>
+            </div>
+            <form class="modal-form" onsubmit="actualizarProyecto(event)">
+                <input type="hidden" id="editProjectId">
+
+                <div class="input-group">
+                    <label for="editProjectName">Nombre del proyecto</label>
+                    <div class="input-with-icon">
+                        <input type="text" id="editProjectName" required>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="editProjectDescription">Descripción</label>
+                    <textarea id="editProjectDescription" rows="5"></textarea>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn primary-btn" style="justify-content: center;">
+                        Guardar Cambios
+                    </button>
+                    
+                    <button type="button" class="btn btn-delete" style="justify-content: center;" onclick="eliminarProyecto()">
+                        <i class="fas fa-trash-alt"></i> Eliminar Proyecto
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
-        const newProjectModal = document.getElementById('newProjectModal');
+        const API_URL = 'http://localhost:8080/api/proyectos';
 
-        function openNewProjectModal() {
-            if (newProjectModal) {
-                newProjectModal.style.display = 'flex';
+        // ==========================================
+        // 1. GESTIÓN DE SESIÓN
+        // ==========================================
+        document.addEventListener('DOMContentLoaded', () => {
+            verificarSesion();
+            cargarProyectos(); // Cargar proyectos al iniciar
+        });
+
+        function verificarSesion() {
+            const usuarioGuardado = localStorage.getItem('usuarioLogueado');
+            const btnLogin = document.getElementById('btnLogin');
+            const userInfo = document.getElementById('userInfo');
+            const userNameDisplay = document.getElementById('userNameDisplay');
+
+            if (usuarioGuardado) {
+                const usuario = JSON.parse(usuarioGuardado);
+                if (btnLogin) btnLogin.style.display = 'none';
+                if (userInfo) userInfo.style.display = 'flex';
+                if (userNameDisplay) userNameDisplay.textContent = 'Hola, ' + usuario.nombre;
+            } else {
+                if (btnLogin) btnLogin.style.display = 'flex';
+                if (userInfo) userInfo.style.display = 'none';
             }
         }
 
-        function closeNewProjectModal() {
-            if (newProjectModal) {
-                newProjectModal.style.display = 'none';
-                const form = newProjectModal.querySelector('.modal-form');
-                if (form) form.reset();
-                const imagePreview = document.getElementById('imagePreview');
-                imagePreview.style.backgroundImage = 'none';
-                imagePreview.classList.remove('has-image');
+        function cerrarSesion() {
+            localStorage.removeItem('usuarioLogueado');
+            window.location.reload();
+        }
+
+        // ==========================================
+        // 2. CONEXIÓN API: CARGAR PROYECTOS (GET)
+        // ==========================================
+        async function cargarProyectos() {
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) throw new Error('Error al obtener proyectos');
+                
+                const proyectos = await response.json();
+                renderizarProyectos(proyectos);
+            } catch (error) {
+                console.error("Error:", error);
+                document.getElementById('proyectosContainer').innerHTML = "<p>No se pudo conectar con el servidor.</p>";
             }
         }
 
-        function validateAndCreate(event) {
+        function renderizarProyectos(proyectos) {
+            const contenedor = document.getElementById('proyectosContainer');
+            contenedor.innerHTML = ''; // Limpiar contenido previo
+
+            if (proyectos.length === 0) {
+                contenedor.innerHTML = "<p>No tienes proyectos creados aún.</p>";
+                return;
+            }
+
+            proyectos.forEach(proyecto => {
+                // Creamos la tarjeta HTML para cada proyecto
+                const cardHTML = `
+                    <article class="proyecto-card" style="position: relative;">
+                        <a href="proyectoBueno.html?id=${proyecto.proyectoId}" style="text-decoration: none; color: inherit; display: block;">
+                            <div class="card-image">
+                                <img src="merry.webp" alt="Proyecto">
+                            </div>
+                            <div class="card-info">
+                                <h3>${proyecto.nombre}</h3>
+                                <p>${proyecto.descripcion || 'Sin descripción'}</p>
+                            </div>
+                        </a>
+                        
+                        <div class="card-actions" onclick="event.preventDefault(); abrirModalEdicion(${proyecto.proyectoId}, '${proyecto.nombre}', '${proyecto.descripcion || ''}')">
+                            <i class="fas fa-ellipsis-h" style="cursor: pointer; padding: 5px;"></i>
+                        </div>
+                    </article>
+                `;
+                contenedor.innerHTML += cardHTML;
+            });
+        }
+
+        // ==========================================
+        // 3. CONEXIÓN API: CREAR PROYECTO (POST)
+        // ==========================================
+        async function crearProyecto(event) {
             event.preventDefault();
+            
+            const nombre = document.getElementById('projectName').value;
+            const descripcion = document.getElementById('projectDescription').value;
+            
+            // Obtener ID del usuario logueado (o usar 1 por defecto si no hay login)
+            const usuarioGuardado = JSON.parse(localStorage.getItem('usuarioLogueado'));
+            const liderId = usuarioGuardado ? usuarioGuardado.miembroId : 1; 
 
-            if (event.target.checkValidity()) {
-                closeNewProjectModal();
+            const nuevoProyecto = {
+                nombre: nombre,
+                descripcion: descripcion,
+                fechaInicio: new Date().toISOString().split('T')[0], // Fecha actual YYYY-MM-DD
+                liderId: liderId
+            };
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(nuevoProyecto)
+                });
+
+                if (response.ok) {
+                    closeNewProjectModal();
+                    cargarProyectos(); // Recargar la lista
+                } else {
+                    alert("Error al crear el proyecto");
+                }
+            } catch (error) {
+                console.error("Error:", error);
             }
         }
 
+        // ==========================================
+        // 4. CONEXIÓN API: ACTUALIZAR PROYECTO (PUT)
+        // ==========================================
+        async function actualizarProyecto(event) {
+            event.preventDefault();
+            
+            const id = document.getElementById('editProjectId').value;
+            const nombre = document.getElementById('editProjectName').value;
+            const descripcion = document.getElementById('editProjectDescription').value;
+
+            // Para actualizar, enviamos solo los campos que cambiaron + el ID del líder si es necesario
+            const datosActualizados = {
+                nombre: nombre,
+                descripcion: descripcion
+                // El backend mantiene el liderId original si no se envía
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(datosActualizados)
+                });
+
+                if (response.ok) {
+                    closeEditProjectModal();
+                    cargarProyectos(); // Refrescar vista
+                } else {
+                    alert("No se pudo actualizar el proyecto.");
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        // ==========================================
+        // 5. CONEXIÓN API: ELIMINAR PROYECTO (DELETE)
+        // ==========================================
+        async function eliminarProyecto() {
+            const id = document.getElementById('editProjectId').value;
+            
+            if(!confirm("¿Estás seguro de que quieres eliminar este proyecto? Esta acción no se puede deshacer.")) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    closeEditProjectModal();
+                    cargarProyectos(); // Refrescar vista
+                } else {
+                    alert("Error al eliminar. Puede que el proyecto tenga tareas asignadas.");
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        // ==========================================
+        // 6. CONTROL DE MODALES
+        // ==========================================
+        const newProjectModal = document.getElementById('newProjectModal');
+        const editProjectModal = document.getElementById('editProjectModal');
+
+        // --- Nuevo Proyecto ---
+        function openNewProjectModal() {
+            newProjectModal.style.display = 'flex';
+        }
+        function closeNewProjectModal() {
+            newProjectModal.style.display = 'none';
+            document.querySelector('#newProjectModal form').reset();
+        }
+
+        // --- Editar / Eliminar Proyecto ---
+        function abrirModalEdicion(id, nombre, descripcion) {
+            // Rellenar el formulario con los datos actuales
+            document.getElementById('editProjectId').value = id;
+            document.getElementById('editProjectName').value = nombre;
+            document.getElementById('editProjectDescription').value = descripcion;
+            
+            // Mostrar modal
+            editProjectModal.style.display = 'flex';
+        }
+
+        function closeEditProjectModal() {
+            editProjectModal.style.display = 'none';
+        }
+
+        // Cerrar modales al hacer clic fuera
         window.onclick = function (event) {
             if (event.target == newProjectModal) {
                 closeNewProjectModal();
             }
+            if (event.target == editProjectModal) {
+                closeEditProjectModal();
+            }
         }
-
-        const imagePreview = document.getElementById('imagePreview');
-        const projectImageInput = document.getElementById('projectImageInput');
-
-        imagePreview.addEventListener('click', () => {
-            projectImageInput.click();
-        });
-
     </script>
 </body>
 </html>

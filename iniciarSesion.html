@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Iniciar Sesión - mi proyecto</title>
+    <title>Iniciar Sesión - TaskFlow</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
@@ -28,7 +28,7 @@
                     <h1>TaskFlow Solution's</h1>
                 </div>
 
-                <form class="login-form">
+                <form class="login-form" id="loginForm">
                     <div class="input-group">
                         <label for="email">Correo Electrónico</label>
                         <div class="input-with-icon">
@@ -45,13 +45,66 @@
 
                     <div class="form-options">                       
                         <a href="olvideContrasenia.html" class="forgot-password">Olvidé mi contraseña</a>
-                    </div>                    
+                    </div>
+                    
+                    <button type="submit" class="btn primary-btn full-width-btn" style="margin-top: 20px; width: 100%; justify-content: center;">
+                        Iniciar Sesión
+                    </button>
+                </form>     
                     
             </div>
 
         </main>
         
     </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async function(event) {
+            event.preventDefault(); // Evita la recarga de la página
+
+            // Capturar los valores de los inputs
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            // Crear el objeto JSON que espera el Backend
+            const datosLogin = {
+                email: email,
+                password: password
+            };
+
+            try {
+                // Hacer la petición POST al endpoint de login que creamos en Java
+                const respuesta = await fetch('http://localhost:8080/api/miembros/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(datosLogin)
+                });
+
+                if (respuesta.ok) {
+                    // Si el login es correcto (Status 200)
+                    const usuario = await respuesta.json();
+                    
+                    // Guardamos el usuario en el navegador
+                    localStorage.setItem('usuarioLogueado', JSON.stringify(usuario));
+                    
+                    alert("¡Bienvenido " + usuario.nombre + "!");
+                    
+                    // Redirigimos al usuario a la página principal
+                    window.location.href = 'index.html';
+                } else {
+                    // Si el login falla (Status 401 o 404)
+                    const mensajeError = await respuesta.text();
+                    alert("Error: " + mensajeError);
+                }
+
+            } catch (error) {
+                console.error("Error de conexión:", error);
+                alert("No se pudo conectar con el servidor. Verifica que la API (Java) esté corriendo en el puerto 8080.");
+            }
+        });
+    </script>
     
 </body>
 </html>
