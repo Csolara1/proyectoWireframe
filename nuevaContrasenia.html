@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear Nueva Contraseña - mi proyecto</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</head>
+<body>
+
+    <div class="app-container">
+
+        <header class="header">
+            <a href="index.html">
+                <img src="logo.png" class="logo-rex" alt="Logo Rex">
+            </a>            
+            <a href="codigo.html" class="login-btn">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+        </header>
+
+        <main class="login-main-content">
+            
+            <div class="login-card">
+                <div class="login-card-header">
+                    <i class="fas fa-user-lock" style="font-size: 2.5rem; color: var(--primary-color); margin-bottom: 10px;"></i>
+                    <h1>Escribe tu nueva contraseña</h1>
+                    <p style="color: var(--secondary-text); font-size: 0.9rem; margin-top: 10px;">
+                        Asegúrate de que sea una contraseña fuerte y que no hayas usado antes.
+                    </p>
+                </div>
+
+                <form class="login-form">
+                    <div class="input-group">
+                        <label for="new-password">Nueva Contraseña</label>
+                        <div class="input-with-icon">
+                            <input type="password" id="new-password" name="new-password" placeholder="Mínimo 8 caracteres" required>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="confirm-password">Confirmar Contraseña</label>
+                        <div class="input-with-icon">
+                            <input type="password" id="confirm-password" name="confirm-password" placeholder="Repite la contraseña" required>
+                        </div>
+                    </div>
+                    
+                    <a href="index.html" class="btn primary-btn full-width-btn" style="text-decoration: none;">
+                        Guardar Nueva Contraseña
+                    </a>
+                </form>
+            </div>
+
+        </main>
+        
+    </div>
+    
+</body>
+</html>

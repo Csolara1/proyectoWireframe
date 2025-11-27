@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recuperar Contraseña - mi proyecto</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</head>
+
+<body>
+
+    <div class="app-container">
+
+        <header class="header">
+            <a href="index.html">
+                <img src="logo.png" class="logo-rex" alt="Logo Rex">
+            </a>            
+            <a href="iniciarSesion.html" class="login-btn">
+                <i class="fas fa-arrow-left"></i> Volver a Login
+            </a>
+        </header>
+
+        <main class="login-main-content">
+
+            <div class="login-card">
+                <div class="login-card-header">
+                    <i class="fas fa-lock"
+                        style="font-size: 2.5rem; color: var(--primary-color); margin-bottom: 10px;"></i>
+                    <h1>¿Olvidaste tu contraseña?</h1>
+                    <p style="color: var(--secondary-text); font-size: 0.9rem; margin-top: 10px;">
+                        Selecciona cómo deseas recibir el código de verificación.
+                    </p>
+                </div>
+
+                <div class="recovery-method-selector">
+                    <div class="method-btn-container">
+                        <a href="recuperarGmail.html" class="method-btn" title="Recuperar por Correo">
+                            <i class="fas fa-envelope" style="padding: 10px;"></i> Correo Electrónico
+                        </a>
+                    </div>
+
+                    <div class="method-btn-container">
+                        <a href="recuperarSMS.html" class="method-btn" title="Recuperar por SMS">
+                            <i class="fas fa-sms" style="padding: 17px;"></i> SMS
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+    </div>
+
+</body>
+
+</html>

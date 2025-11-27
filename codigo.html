@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificar Código - mi proyecto</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</head>
+
+<body>
+
+    <div class="app-container">
+
+        <header class="header">
+            <a href="index.html">
+                <img src="logo.png" class="logo-rex" alt="Logo Rex">
+            </a>            
+            <a href="olvideContrasenia.html" class="login-btn">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+        </header>
+
+        <main class="login-main-content">
+
+            <div class="login-card">
+                <div class="login-card-header">
+                    <i class="fas fa-mobile-alt"
+                        style="font-size: 2.5rem; color: var(--primary-color); margin-bottom: 10px;"></i>
+                    <h1>Ingresar código de verificación</h1>
+                </div>
+
+                <div>
+                    <div class="verification-inputs">
+                        <input type="tel" maxlength="1" pattern="[0-9]">
+                        <input type="tel" maxlength="1" pattern="[0-9]">
+                        <input type="tel" maxlength="1" pattern="[0-9]">
+                        <input type="tel" maxlength="1" pattern="[0-9]">
+                        <input type="tel" maxlength="1" pattern="[0-9]">
+                        <input type="tel" maxlength="1" pattern="[0-9]">
+                    </div>
+
+                    <a href="nuevaContrasenia.html" class="btn primary-btn full-width-btn"
+                        style="text-align: center; text-decoration: none; display: block;">
+                        Verificar y Continuar
+                    </a>
+
+                    <a href="#" class="resend-link">
+                        <i class="fas fa-sync-alt"></i> Reenviar código
+                    </a>
+                </div>
+
+            </div>
+
+        </main>
+
+    </div>
+
+</body>
+
+</html>

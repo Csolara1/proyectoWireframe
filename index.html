@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mi proyecto</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</head>
+
+<body>
+
+    <div class="app-container">
+
+        <header class="header">
+            <a href="index.html">
+                <img src="logo.png" class="logo-rex" alt="Logo Rex">
+            </a>
+            <div class="search-bar">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Buscar proyectos...">
+            </div>
+            <a href="iniciarSesion.html" class="login-btn">
+                Iniciar Sesión
+            </a>
+        </header>
+
+        <main class="main-content">
+            <section class="proyectos-dashboard">
+                <div class="dashboard-header">
+                    <h2>Mis proyectos</h2>
+                    <div class="actions">
+                        <button class="btn primary-btn" id="openNewProjectModal" onclick="openNewProjectModal()"><i
+                                class="fas fa-plus"></i>
+                            Nuevo Proyecto
+                        </button>
+                        <i class="fas fa-th-large view-icon active"></i>
+                        <i class="fas fa-list view-icon"></i>
+                        <i class="fas fa-ellipsis-v menu-icon"></i>
+                    </div>
+                </div>
+                <div class="proyectos-grid">
+                    <a href="proyectoBueno.html">
+                        <article class="proyecto-card">
+                            <div class="card-image"><img src="merry.webp" alt="Imagen del proyecto"></div>
+                            <div class="card-info">
+                                <h3>proyectoWireframe</h3>
+                                <p>Descripción...</p>
+                            </div>
+                            <div class="card-actions">
+                                <i class="fas fa-ellipsis-h"></i>
+                            </div>
+                        </article>
+                    </a>
+                    <article class="proyecto-card">
+                        <div class="card-image">[IMG Placeholder]</div>
+                        <div class="card-info">
+                            <h3>Nombre Proyecto B</h3>
+                            <p>Descripción corta...</p>
+                        </div>
+                        <div class="card-actions">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </div>
+                    </article>
+                </div>
+            </section>
+        </main>
+
+    </div>
+    <div id="newProjectModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-folder-plus"></i> Nuevo Proyecto</h2>
+                <button class="modal-close-btn" onclick="closeNewProjectModal()">&times;</button>
+            </div>
+            <form class="modal-form" onsubmit="return validateAndCreate(event)">
+                <div class="form-top-grid">
+                    <div class="input-group name-input-group">
+                        <label for="projectName">Nombre del proyecto</label>
+                        <div class="input-with-icon">
+                            <input type="text" id="projectName" placeholder="Introduzca el nombre..." required>
+                        </div>
+                    </div>
+                    <div class="input-group image-input-group">
+                        <div class="image-preview" id="imagePreview" style="cursor: pointer;">
+                            <i class="fas fa-image fa-2x image-icon"></i>
+                            <img id="previewImage" src="" alt="Vista previa de la imagen" style="display: none;">
+                        </div>
+                        <input type="file" id="projectImageInput" accept="image/*" style="display: none;">
+                    </div>
+                </div>
+                <div class="input-group description-input-group">
+                    <label for="projectDescription">Descripción (Opcional)</label>
+                    <textarea id="projectDescription" rows="5"
+                        placeholder="Descripción breve del proyecto..."></textarea>
+                </div>
+                <div>
+                    <button type="button" class="btn primary-btn" style="margin-left: 35%;"
+                        onclick="closeNewProjectModal()">
+                        Crear proyecto
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const newProjectModal = document.getElementById('newProjectModal');
+
+        function openNewProjectModal() {
+            if (newProjectModal) {
+                newProjectModal.style.display = 'flex';
+            }
+        }
+
+        function closeNewProjectModal() {
+            if (newProjectModal) {
+                newProjectModal.style.display = 'none';
+                const form = newProjectModal.querySelector('.modal-form');
+                if (form) form.reset();
+                const imagePreview = document.getElementById('imagePreview');
+                imagePreview.style.backgroundImage = 'none';
+                imagePreview.classList.remove('has-image');
+            }
+        }
+
+        function validateAndCreate(event) {
+            event.preventDefault();
+
+            if (event.target.checkValidity()) {
+                closeNewProjectModal();
+            }
+        }
+
+        window.onclick = function (event) {
+            if (event.target == newProjectModal) {
+                closeNewProjectModal();
+            }
+        }
+
+        const imagePreview = document.getElementById('imagePreview');
+        const projectImageInput = document.getElementById('projectImageInput');
+
+        imagePreview.addEventListener('click', () => {
+            projectImageInput.click();
+        });
+
+    </script>
+</body>
+</html>
